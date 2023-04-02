@@ -1,0 +1,64 @@
+﻿<YK:Window x:Class="OverParse.AtkLogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OverParse"
+        xmlns:YK="clr-namespace:YKToolkit.Controls;assembly=YKToolkit.Controls"
+        mc:Ignorable="d"
+        Loaded="Window_Loaded"
+        WindowStartupLocation="CenterOwner"
+        Background="#FF404040"
+        MouseDown="Window_MouseDown"
+        WindowStyle="None" AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip"
+        Title="AtkLog" Height="250" Width="360">
+
+    <Window.Resources>
+        <Style x:Key="ExitStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="Marlett" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="5,2,5,2" />
+        </Style>
+
+    </Window.Resources>
+
+    <Border BorderBrush="#88888888" BorderThickness="1" Padding="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Click="Reset_Click" Background="Transparent" Foreground="White" BorderThickness="0" Padding="5,0,5,0">
+                    <Canvas xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Name="svg3805" Width="12" Height="12">
+                        <Canvas.RenderTransform>
+                            <ScaleTransform ScaleX="0.5" ScaleY="0.5" />
+                        </Canvas.RenderTransform>
+                        <Canvas.Resources/>
+                        <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path3801" Data="M0 0h24v24H0z"/>
+                        <Path xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Name="path3803" Fill="#ffffff" StrokeThickness="1.50046897" Data="M 20.472795 3.5250001 C 18.296435 1.35 15.309568 0 11.992495 0 5.3583488 0 0 5.3700001 0 12 c 0 6.63 5.3583488 12 11.992495 12 5.598499 0 10.266417 -3.825 11.602252 -9 h -3.121952 c -1.230769 3.495 -4.562851 6 -8.4803 6 -4.9681049 0 -9.0056284 -4.035 -9.0056284 -9 0 -4.9649999 4.0375235 -9 9.0056284 -9 2.491558 0 4.712946 1.0350001 6.333959 2.6700001 L 13.493434 10.5 H 24 V 0 Z"/>
+                    </Canvas>
+                </Button>
+                <Label x:Name="AtkCount" Content="0" Margin="10,0,0,0" Foreground="White" Padding="0" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="0" Click="Minimize_Click" Style="{StaticResource ExitStyle}"/>
+                <Button Content="r" Click="Close_Click" Style="{StaticResource ExitStyle}"/>
+            </StackPanel>
+
+            <DataGrid x:Name="AtkLogList" Grid.Row="1" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="PAName" Binding="{Binding IDName}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="PAID" Binding="{Binding ReadID}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Damage" Binding="{Binding ReadDamage}" IsReadOnly="True" />
+                    <DataGridTextColumn Header="IsCri?" Binding="{Binding IsCri}"  Width="40" IsReadOnly="True" />
+                    <DataGridTextColumn Header="Time" Binding="{Binding UserTime}" IsReadOnly="True" />
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</YK:Window>

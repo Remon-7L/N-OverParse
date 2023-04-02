@@ -1,0 +1,124 @@
+﻿<YK:Window
+    x:Class="OverParse.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:YK="clr-namespace:YKToolkit.Controls;assembly=YKToolkit.Controls"
+    xmlns:UC="clr-namespace:OverParse.TabView"
+    xmlns:properties="clr-namespace:OverParse.Properties"
+    xmlns:local="clr-namespace:OverParse"
+    mc:Ignorable="d"
+    WindowStyle="None" AllowsTransparency="False"
+    Activated="Window_Activated" Deactivated="Window_Deactivated"
+    ResizeMode="CanResizeWithGrip"
+    MouseDown="Window_MouseDown"
+    Loaded="Window_Loaded"
+    Closing="Window_Closing"
+    StateChanged="Window_StateChanged"
+    Background="#FF000000"
+    ContentBackground="#FF0A0A0A"
+    x:Name="TheWindow"
+    Title="OverParse"
+    Height="{Binding Source={x:Static properties:Settings.Default},Path=Height}" 
+    Width="{Binding Source={x:Static properties:Settings.Default},Path=Width}"
+    Left="{Binding Source={x:Static properties:Settings.Default},Path=Left}"
+    Top="{Binding Source={x:Static properties:Settings.Default},Path=Top}"
+    >
+
+    <Window.BindingGroup>
+        <BindingGroup Name="ForegroundUpdate" NotifyOnValidationError="True"/>
+    </Window.BindingGroup>
+
+    <Window.Resources>
+        <Style x:Key="ExitStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" />
+            <Setter Property="FontFamily" Value="Marlett" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="5,0" />
+        </Style>
+
+        <Style TargetType="ListViewItem">
+            <Setter Property="Height" Value="Auto"/>
+            <Setter Property="MinHeight" Value="10" />
+            <Setter Property="Padding" Value="0,0,0,0"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="BorderThickness" Value="0" />
+            <!--<EventSetter Event="MouseRightButtonUp" Handler="ListViewItem_MouseRightClick" />-->
+            <Setter Property="Background" Value="{Binding Brush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#88FFFFFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="ListView">
+            <Setter Property="Background" Value="#FF0A0A0A"/>
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="FontFamily" Value="Noto Sans CJK JP DemiLight" />
+        </Style>
+
+        <Style TargetType="Menu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+        </Style>
+
+        <Style x:Key="topmenu" TargetType="MenuItem" >
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="5,0,5,0"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+        </Style>
+
+        <Style x:Key="submenu" TargetType="MenuItem">
+            <Setter Property="FontFamily" Value="Yu Gothic UI" />
+            <Setter Property="StaysOpenOnClick" Value="True" />
+        </Style>
+
+    </Window.Resources>
+
+    <Border BorderBrush="#88888888" BorderThickness="0" x:Name="MainWindowBorder">
+        <Grid HorizontalAlignment="Stretch" Margin="0,0,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="1*"/>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Menu x:Name="MenuBar"  DockPanel.Dock="Top" HorizontalAlignment="Left" VerticalAlignment="Top" FontSize="12" ClipToBounds="True">
+                <MenuItem Header="Logging" Style="{StaticResource topmenu}">
+                    <MenuItem Style="{StaticResource submenu}" Header="エンカウント終了"  x:Name="EndEncounter" InputGestureText="Ctrl+Shift+E" Click="EndEncounter_Click" StaysOpenOnClick="False"/>
+                    <MenuItem Style="{StaticResource submenu}" Header="戦闘データ破棄" x:Name="EndEncounterNoLog" InputGestureText="Ctrl+Shift+R" Click="EndEncounterNoLog_Click" StaysOpenOnClick="False" />
+                    <Separator />
+                    <MenuItem Style="{StaticResource submenu}" Header="ログフォルダーを開く" Click="OpenLogsFolder_Click"/>
+                    <MenuItem Style="{StaticResource submenu}" Header="セッションログ" x:Name="SessionLogs">
+                        <MenuItem Style="{StaticResource submenu}" Header="まだ記録されていません" x:Name="SessionLogPlaceholder" IsEnabled="False"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Style="{StaticResource topmenu}" Header="Setting">
+                    <MenuItem Style="{StaticResource submenu}" IsCheckable="True" Header="常に手前に表示" x:Name="AlwaysOnTop" Click="AlwaysOnTop_Click" InputGestureText="Ctrl+Shift+A" IsChecked="{Binding Source={x:Static properties:Settings.Default},Path=AlwaysOnTop}"  />
+                    <MenuItem Style="{StaticResource submenu}" Header="自分のIDを登録" Click="RegistUserID_Click" />
+                    <MenuItem Style="{StaticResource submenu}" Header="インストール設定を開く" x:Name="OpenInstall" Click="OpenInstall_Click"/>
+                </MenuItem>
+                <MenuItem Header="AtkLog" Click="AtkLog_Click" Style="{StaticResource topmenu}"/>
+            </Menu>
+            <Label x:Name="Datetime" Visibility="Collapsed" Foreground="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" Padding="0" Margin="250,1,0,0" FontSize="12" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Stretch" Orientation="Horizontal">
+                <Button Click="Minimize_Click" Content="0" Style="{StaticResource ExitStyle}" />
+                <Button Click="Exit_Click" Content="r" Style="{StaticResource ExitStyle}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Row="1">
+                <UC:CombatControl x:Name="AllTab" Width="{Binding ElementName=TheWindow, Path=ActualWidth}" />
+            </StackPanel>
+
+            <Rectangle x:Name="EncounterIndicator" Grid.Row="2" Height="2" VerticalAlignment="Top"  Fill="White" IsHitTestVisible="False" ClipToBounds="True" />
+            <Label x:Name="EncounterStatus" Content="Initializing..." Grid.Row="2" MinHeight="12" Foreground="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" Margin="2,0,0,0" FontSize="12" FontFamily="Noto Sans CJK JP DemiLight,Yu Gothic UI" IsHitTestVisible="False" ClipToBounds="True" />
+        </Grid>
+    </Border>
+</YK:Window>
