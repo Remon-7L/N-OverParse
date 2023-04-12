@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Media;
 
 namespace OverParse
@@ -7,24 +8,16 @@ namespace OverParse
     public struct Hit
     {
         public uint ID;
-        public int Damage, DiffTime; //Graph?
+        public int Damage, DiffTime;
         public bool Cri;
         public Hit(uint paid, int dmg, bool cri, int time) { ID = paid; Damage = dmg; Cri = cri; DiffTime = time; }
 
         public string ReadID => ID.ToString();
-        public string IDName
-        {
-            get
-            {
-                string paname = "Unknown";
-                if (MainWindow.skillDict.ContainsKey(ID)) { paname = MainWindow.skillDict[ID]; }
-                return paname;
-            }
-        }
+        public string IDName => MainWindow.skillDict.ContainsKey(ID) ? MainWindow.skillDict[ID] : ID.ToString();
 
-        public string ReadDamage => Damage.ToString("N0");
+        public string ReadDamage => Damage.ToString();
         public string IsCri => Cri ? "True" : "False";
-        public string UserTime => DiffTime.ToString();
+        public string UserTime => DateTimeOffset.FromUnixTimeSeconds(DiffTime).LocalDateTime.ToString("HHmmss");
     }
 
     /// <summary>
@@ -32,26 +25,21 @@ namespace OverParse
     /// </summary>
     public class Player
     {
-        internal int ID;
-        public double PercentDPS, PercentReadDPS, TScore;
-        public List<Hit> Attacks;
-        public ulong Damage, Damaged, CriCount, AttackCount;
+        public int ID, Maxdmg;
+        public ObservableCollection<Hit> Attacks;
+        public long Damage, Damaged, CriCount, AttackCount;
         public uint MaxHitID;
-        public int Maxdmg;
+        public string PlayerName;
 
-        public string DisplayName
+        public string DisplayName => PlayerName;
+
+        public string RatioPercent
         {
             get
             {
-                if (MainWindow.nameDict.ContainsKey(ID))
-                {
-                    return MainWindow.nameDict[ID];
-                }
-                return ID.ToString();
+                return Damage == MainWindow.current.totalDamage ? "100" : $"{Damage / (double)MainWindow.current.totalDamage * 100:00.00}";
             }
         }
-
-        public string RatioPercent => $"{PercentReadDPS:00.00}";
 
         public string BindDamage
         {
@@ -65,6 +53,8 @@ namespace OverParse
             }
         }
 
+        public long SortDamage => Damage;
+
         public string BindDamaged
         {
             get
@@ -76,8 +66,6 @@ namespace OverParse
                 else { return Damaged.ToString("N0"); }
             }
         }
-
-        public string ReadTScore => TScore.ToString("N2");
 
         public double DPS => Damage / (double)MainWindow.current.ActiveTime;
         public double ReadDPS => Math.Round(Damage / (double)MainWindow.current.ActiveTime);
@@ -103,8 +91,13 @@ namespace OverParse
             {
                 try
                 {
-                    ulong tempCtl = CriCount, tempCount = AttackCount;
-                    if (Properties.Settings.Default.Nodecimal) { return ((double)tempCtl / tempCount * 100).ToString("N0"); }
+                    long tempCtl = CriCount, tempCount = AttackCount;
+                    if (Properties.Settings.Default.Nodecimal) 
+                    { return ((double)tempCtl / tempCount * 100).ToString("N0"); }
+                    else if (tempCtl == tempCount)
+                    {
+                        return "100";
+                    }
                     else { return ((double)tempCtl / tempCount * 100).ToString("N2"); }
                 }
                 catch { return "Error"; }
@@ -128,7 +121,7 @@ namespace OverParse
                 {
                     if (Properties.Settings.Default.MaxSI)
                     {
-                        return FormatDmg((ulong)Maxdmg);
+                        return FormatDmg(Maxdmg);
                     }
                     else { return Maxdmg.ToString("N0"); }
                 }
@@ -136,17 +129,7 @@ namespace OverParse
             }
         }
 
-        public string MaxHit
-        {
-            get
-            {
-                if (MainWindow.skillDict.ContainsKey(MaxHitID))
-                {
-                    return MainWindow.skillDict[MaxHitID];
-                }
-                return "Unknown";
-            }
-        }
+        public string MaxHit => MainWindow.skillDict.ContainsKey(MaxHitID) ? MainWindow.skillDict[MaxHitID] : "Unknown";
 
         public string Writedmgd => Damaged.ToString("N0");
         public string WriteMaxdmg
@@ -157,7 +140,7 @@ namespace OverParse
             }
         }
 
-        private string FormatDmg(ulong value)
+        private string FormatDmg(long value)
         {
             if (value >= 1000000000) { return (value / 1000000000D).ToString("0.00") + "G"; }
             else if (value >= 100000000) { return (value / 1000000D).ToString("0.0") + "M"; }
@@ -180,7 +163,7 @@ namespace OverParse
         {
             get
             {
-                if (MainWindow.workingList.IndexOf(this) % 2 == 0)
+                if (MainWindow.current.players.IndexOf(this) % 2 == 0)
                 {
                     if (MainWindow.IsShowGraph)
                     {
@@ -206,30 +189,59 @@ namespace OverParse
 
             LinearGradientBrush lgb = new LinearGradientBrush { StartPoint = new System.Windows.Point(0, 0), EndPoint = new System.Windows.Point(1, 0) };
             lgb.GradientStops.Add(new GradientStop(c, 0));
-            lgb.GradientStops.Add(new GradientStop(c, Damage / MainWindow.current.firstDamage));
-            lgb.GradientStops.Add(new GradientStop(c2, Damage / MainWindow.current.firstDamage));
+            lgb.GradientStops.Add(new GradientStop(c, Damage / (double)MainWindow.current.TopPlayerDamage));
+            lgb.GradientStops.Add(new GradientStop(c2, Damage / (double)MainWindow.current.TopPlayerDamage));
             lgb.GradientStops.Add(new GradientStop(c2, 1));
             lgb.SpreadMethod = GradientSpreadMethod.Repeat;
             return lgb;
         }
 
-        public Player(int id)
+        #region 偏差値
+        /// <summary>全体平均dmg</summary>
+        public double TotalAVG => 
+            MainWindow.IsRunning ? 
+            MainWindow.current.totalDamage / MainWindow.current.players.Count
+            : MainWindow.backup.totalDamage / MainWindow.backup.players.Count;
+
+        /// <summary>標準偏差</summary>
+        public double TotalSD =>
+            MainWindow.IsRunning ?
+            Math.Sqrt(MainWindow.current.players.Select(x => x.Damage * x.Damage).Sum() / MainWindow.current.players.Count - TotalAVG * TotalAVG)
+            : Math.Sqrt(MainWindow.backup.players.Select(x => x.Damage * x.Damage).Sum() / MainWindow.backup.players.Count - TotalAVG * TotalAVG);
+
+        /// <summary>偏差値</summary>
+        public string TScore
+        {
+            get
+            {
+                if (Damage - TotalAVG == 0) { return "50.00"; }
+                return ((Damage - TotalAVG) / TotalSD * 10 + 50).ToString("N2");
+            }
+        }
+
+        #endregion 偏差値
+
+
+
+
+        public Player(int id, string name)
         {
             ID = id;
-            PercentDPS = -1;
-            Attacks = new List<Hit>();
-            PercentReadDPS = 0;
+            PlayerName = name;
+            Attacks = new ObservableCollection<Hit>();
             Damaged = 0;
         }
+
+
     }
 
     public class Session
     {
         public int startTimestamp, nowTimestamp, diffTime, ActiveTime;
-        public List<int> instances = new List<int>();
-        public ulong totalDamage;
-        public double totalSD, firstDamage, totalDPS;
-        public List<Player> players = new List<Player>();
+        public long totalDamage;
+        public ObservableCollection<Player> players = new ObservableCollection<Player>();
+
+        public long TopPlayerDamage => players.Any() ? players.Max(x => x.Damage) : 0;
     }
 
 }

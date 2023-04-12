@@ -153,7 +153,7 @@ namespace OverParse
         /// </summary>
         private void CreateEmptyConfig()
         {
-            Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\OverParse");
+            Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\N-OverParse");
             XDocument doc = new XDocument();
             var declaration = new XDeclaration("1.0", "utf-8", "true");
             var config = new XElement(CONFIG);
@@ -201,7 +201,7 @@ namespace OverParse
         /// The setting key this is returning must set before the settings are used.
         /// e.g. <c>Properties.Settings.Default.SettingsKey = @"C:\temp\user.config";</c>
         /// </summary>
-        private string UserConfigPath => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\OverParse\\user.config";
+        private string UserConfigPath => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\N-OverParse\\user.config";
             //Properties.Settings.Default.SettingsKey;
 
         /// <summary>

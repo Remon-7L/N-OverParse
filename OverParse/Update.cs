@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using System.Windows.Media;
 
 namespace OverParse
@@ -13,8 +15,9 @@ namespace OverParse
         public static string lastStatus = "";
         public static byte noUpdateCount;
 
-        //Session.current
-        public async Task<bool> UpdateLog(object sender, EventArgs e)
+        /// <summary>ログ更新</summary>
+        /// <returns>IsLogUpdated</returns>
+        public async Task<bool> UpdateLog()
         {
             if (logReader == null) { return false; }
             string newLines = await logReader.ReadToEndAsync();
@@ -31,21 +34,29 @@ namespace OverParse
 
                 int lineTimestamp = int.Parse(parts[0]);
                 int sourceID = int.Parse(parts[2]);
+                string sourceName = parts[3];
                 int targetID = int.Parse(parts[4]);
-                uint attackID = uint.Parse(parts[6]); //WriteLog()にてID<->Nameの相互変換がある為int化が無理.......なはずだった
+                uint attackID = uint.Parse(parts[6]);
                 int hitDamage = int.Parse(parts[7]);
-                bool Cri = (parts[9] == "1") ? true : false;
+                bool Cri = parts[9] == "1";
 
                 if (currentPlayerID == sourceID) { userattacks.Add(new Hit(attackID, hitDamage, Cri, lineTimestamp)); }
 
                 //処理スタート
                 if (10000000 < sourceID) //Player->Enemy
                 {
-                    if (!IsRunning) { current = new Session(); }
-
-                    if (current.startTimestamp == 0) //初期が0だった場合
+                    if (!IsRunning)
                     {
-                        current.startTimestamp = lineTimestamp; current.nowTimestamp = lineTimestamp;
+                        current = new Session();
+                        AllTab.CombatantData.ItemsSource = current.players;
+                        var collectionView = CollectionViewSource.GetDefaultView(AllTab.CombatantData.ItemsSource);
+                        collectionView.SortDescriptions.Add(new SortDescription("SortDamage", ListSortDirection.Descending));
+                    }
+
+                    if (current.startTimestamp == 0)
+                    { //initialize
+                        current.startTimestamp = lineTimestamp;
+                        current.nowTimestamp = lineTimestamp; 
                     }
 
                     if (0 < (lineTimestamp - current.nowTimestamp))
@@ -64,11 +75,11 @@ namespace OverParse
                     }
                     else
                     {
-                        current.players.Add(new Player(sourceID));
+                        current.players.Add(new Player(sourceID, sourceName));
                         p = current.players[current.players.Count - 1];
                     }
 
-                    current.totalDamage += (ulong)hitDamage; p.Damage += (ulong)hitDamage; p.AttackCount++;
+                    current.totalDamage += hitDamage; p.Damage += hitDamage; p.AttackCount++;
                     if (Cri) { p.CriCount++; }
                     if (p.Maxdmg < hitDamage) { p.Maxdmg = hitDamage; p.MaxHitID = attackID; }
                     p.Attacks.Add(new Hit(attackID, hitDamage, Cri, current.diffTime));
@@ -79,22 +90,16 @@ namespace OverParse
                 {
                     if (!IsRunning) { continue; } //被ダメージからセッションが始まらないようにする
 
-                    if (current.players.Any(p => p.ID == targetID))
-                    {
-                        Player p = current.players.First(x => x.ID == targetID);
-                        p.Damaged += (ulong)hitDamage;
-                    }
-                    else
-                    {
-                        Player newplayer = new Player(targetID);
-                        newplayer.Damaged += (ulong)hitDamage;
-                        current.players.Add(newplayer);
-                    }
-
+                    Player p = current.players.FirstOrDefault(x => x.ID == targetID);
+                    if(p != null) { p.Damaged += hitDamage; }
+                    
+                    /* 
+                     * Plugin_20230407では被ダメにプレイヤー名情報が入らない為
+                     * Sessionに既に登録されてない場合は無視
+                     */
                 }
             }
 
-            current.players.Sort((x, y) => y.Damage.CompareTo(x.Damage));
             return true;
         }
 
@@ -112,8 +117,8 @@ namespace OverParse
                 Datetime.Content = DateTime.Now.ToString("HH:mm:ss.ff");
             }
 
-            bool IsLogContain = await UpdateLog(this, null);
-            if (IsLogContain == false && noUpdateCount < 10)
+            bool IsLogContain = await UpdateLog();
+            if (IsLogContain == false && noUpdateCount < 5)
             {
                 noUpdateCount++;
                 StatusUpdate();
@@ -122,66 +127,12 @@ namespace OverParse
             }
 
             noUpdateCount = 0;
-            workingList = new List<Player>(current.players);
+            StatusUpdate();
 
-            // get group damage totals
-            long totalReadDamage = workingList.AsParallel().Sum(x => (int)x.Damage);
+            AllTab.CombatantData.ItemsSource = current.players;
+            var collectionView = CollectionViewSource.GetDefaultView(AllTab.CombatantData.ItemsSource);
+            collectionView.SortDescriptions.Add(new SortDescription("SortDamage", ListSortDirection.Descending));
 
-            ulong totalAVG = 0;
-
-            if (workingList.Any())
-            {
-                totalAVG = current.totalDamage / (ulong)workingList.Count();
-                foreach (Player p in workingList)
-                {
-                    p.PercentReadDPS = p.Damage / (double)totalReadDamage * 100;
-                    p.TScore = Math.Abs(p.Damage - (double)totalAVG) * Math.Abs(p.Damage - (double)totalAVG);
-                }
-
-                //Hensa
-                if (workingList.Any())
-                {
-                    current.totalSD = Math.Sqrt(workingList.Average(x => x.TScore));
-                    foreach (Player c in workingList)
-                    {
-                        double temp = Math.Abs(c.Damage - (double)totalAVG) * 10 / current.totalSD;
-                        if (c.Damage < totalAVG)
-                        {
-                            c.TScore = 50.0 - temp;
-                        }
-                        else if (totalAVG < c.Damage)
-                        {
-                            c.TScore = 50.0 + temp;
-                        }
-                        else
-                        {
-                            c.TScore = 50.00;
-                        }
-                    }
-                }
-
-                // status pane updates
-                StatusUpdate();
-
-                //damage graph stuff
-                current.firstDamage = 0;
-                // clear out the list
-                AllTab.CombatantData.Items.Clear();
-
-                foreach (Player c in workingList)
-                {
-                    if (current.firstDamage < c.Damage)
-                    {
-                        current.firstDamage = c.Damage;
-                    }
-
-                    if ((0 < c.Damage))
-                    {
-                        AllTab.CombatantData.Items.Add(c);
-                    }
-                }
-
-            }
             damageTimer.Start();
         }
 
@@ -195,13 +146,13 @@ namespace OverParse
                 EncounterStatus.Content = $"{timer}";
 
                 double totalDPS = current.totalDamage / (double)current.ActiveTime;
-                if (totalDPS > 0) { EncounterStatus.Content += $" - Total : {current.totalDamage.ToString("N0")}" + $" - {totalDPS.ToString("N0")} DPS"; }
+                if (totalDPS > 0) { EncounterStatus.Content += $" - Total : {current.totalDamage:N0}" + $" - {totalDPS:N0} DPS"; }
                 lastStatus = EncounterStatus.Content.ToString();
             }
             else if (!damagelogs.Exists || !damagelogs.GetFiles().Any())
             {
                 EncounterIndicator.Fill = new SolidColorBrush(Color.FromArgb(255, 255, 128, 128));
-                EncounterStatus.Content = "Directory No Logs : (Re)Start PSO2, Attack Enemy  or  Failed dll plugin Install";
+                EncounterStatus.Content = "Directory No Logs : (Re)Start PSO2 or Failed dll plugin Install";
             }
             else if (!IsRunning)
             {
@@ -219,21 +170,21 @@ namespace OverParse
             if (current.ActiveTime == 0) { current.ActiveTime = 1; }
             string timer = TimeSpan.FromSeconds(current.ActiveTime).ToString(@"hh\:mm\:ss");
             StringBuilder log = new StringBuilder(8192);
-            _ = log.Append($"{DateTime.Now.ToString("F")} | {timer} | TotalDamage : {current.totalDamage.ToString("N0")} | TotalDPS : {current.totalDPS.ToString("N0")}").AppendLine().AppendLine();
+            _ = log.Append($"{DateTime.Now:F} | {timer} | TotalDamage : {current.totalDamage:N0} | TotalDPS : {current.totalDamage / current.ActiveTime:N0}").AppendLine().AppendLine();
 
-            foreach (Player c in workingList)
+            foreach (Player c in current.players)
             {
-                _ = log.Append($"{c.ID} | {c.RatioPercent}% | 偏差値:{c.TScore} | {c.Damage.ToString("N0")} dmg | {c.Writedmgd} dmgd | {c.DPS} DPS | Critical: {c.WCRIPercent}% | Max: {c.WriteMaxdmg} ({c.MaxHit})").AppendLine();
+                _ = log.Append($"{c.PlayerName} | {c.RatioPercent}% | 偏差値:{c.TScore} | {c.Damage:N0} dmg | {c.Writedmgd} dmgd | {c.DPS:N0} DPS | Critical: {c.WCRIPercent}% | Max: {c.WriteMaxdmg} ({c.MaxHit})").AppendLine();
             }
 
             _ = log.AppendLine().AppendLine();
 
-            foreach (Player c in workingList)
+            foreach (Player c in current.players)
             {
                 List<string> attackNames = new List<string>();
                 List<Tuple<string, List<int>, List<bool>>> attackData = new List<Tuple<string, List<int>, List<bool>>>();
 
-                _ = log.AppendLine($"[ {c.ID} - {c.RatioPercent}% - {c.Damage.ToString("N0")} dmg ]").AppendLine().AppendLine();
+                _ = log.AppendLine($"[ {c.PlayerName} - {c.RatioPercent}% - {c.Damage:N0} dmg ]").AppendLine().AppendLine();
 
                 List<PAHit> temphits = new List<PAHit>();
                 foreach (Hit atk in c.Attacks)

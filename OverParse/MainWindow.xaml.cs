@@ -24,10 +24,8 @@ namespace OverParse
         public static string currentPlayerName = null;
         public static string[] critignoreskill;
         public static ConcurrentDictionary<uint, string> skillDict = new ConcurrentDictionary<uint, string>();
-        public static ConcurrentDictionary<int, string> nameDict = new ConcurrentDictionary<int, string>();
         public static DirectoryInfo damagelogs;
         public static FileInfo damagelogcsv;
-        public static List<Player> workingList = new List<Player>();
         public static Session current = new Session();
         public static Session backup = new Session();
         public static ObservableCollection<Hit> userattacks = new ObservableCollection<Hit>();
@@ -41,10 +39,10 @@ namespace OverParse
         public MainWindow()
         {
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Idle;
-            try { Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\OverParse"); Directory.CreateDirectory("Logs"); }
+            try { Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\N-OverParse"); Directory.CreateDirectory("Logs"); }
             catch (Exception ex)
             {
-                MessageBox.Show($"OverParseに必要なアクセス権限がありません！\n管理者としてOverParseを実行してみるか、システムのアクセス権を確認して下さい！\nOverParseを別のフォルダーに移動してみるのも良いかも知れません。\n\n{ex.ToString()}");
+                _ = MessageBox.Show($"OverParseに必要なアクセス権限がありません！\n管理者としてOverParseを実行してみるか、システムのアクセス権を確認して下さい！\nOverParseを別のフォルダーに移動してみるのも良いかも知れません。\n\n{ex}");
                 Application.Current.Shutdown();
             }
             InitializeComponent();
@@ -89,8 +87,8 @@ namespace OverParse
             }
 
             SkillsLoad();
-            NameLoad();
             HotKeyLoad();
+            DamageSortDesc();
 
             damageTimer = new DispatcherTimer();
             logCheckTimer = new DispatcherTimer();
@@ -173,7 +171,7 @@ namespace OverParse
             //Windowを移動可能にする
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                if (damageTimer != null) { damageTimer.Stop(); }
+                damageTimer?.Stop();
 
                 DragMove();
             }

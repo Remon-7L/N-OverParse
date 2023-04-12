@@ -1,7 +1,9 @@
 ﻿using HotKeyFrame;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -31,24 +33,6 @@ namespace OverParse
             }
         }
 
-        private void NameLoad()
-        {
-            try
-            {
-                string[] skills = File.ReadAllLines(@"prop/names.csv");
-
-                foreach (string name in skills)
-                {
-                    string[] split = name.Split(',');
-                    if (split.Length > 1) { _ = nameDict.GetOrAdd(int.Parse(split[1]), split[0]); }
-                }
-            }
-            catch
-            {
-                MessageBox.Show("names.csvが存在しません。", "OverParse Setup", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
         private void HotKeyLoad()
         {
             try
@@ -75,6 +59,10 @@ namespace OverParse
 
             m.Datetime.Visibility = Properties.Settings.Default.Clock ? Visibility.Visible : Visibility.Collapsed;
             currentPlayerID = Properties.Settings.Default.RegistID;
+
+
+            //フォントサイズ適用
+            m.AllTab.CombatantData.FontSize = 14.0;
 
             //GraphSettings
             IsShowGraph = Properties.Settings.Default.IsShowGraph;
@@ -122,6 +110,13 @@ namespace OverParse
 
             //色を適用した後、最後に設定
             m.Background.Opacity = Properties.Settings.Default.ListOpacity;
+        }
+
+        private void DamageSortDesc()
+        {
+            AllTab.CombatantData.ItemsSource = current.players;
+            var collectionView = CollectionViewSource.GetDefaultView(AllTab.CombatantData.ItemsSource);
+            collectionView.SortDescriptions.Add(new SortDescription("SortDamage", ListSortDirection.Descending));
         }
 
     }
