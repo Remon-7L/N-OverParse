@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:OverParse.TabView"
              xmlns:properties="clr-namespace:OverParse.Properties"
              mc:Ignorable="d" 
-             d:DesignHeight="270" d:DesignWidth="640">
+             d:DesignHeight="200" d:DesignWidth="640">
 
     <UserControl.Resources>
         <Style x:Key="GridViewColumnHeaderGripper" TargetType="{x:Type Thumb}">
@@ -20,7 +20,7 @@
                     <ControlTemplate TargetType="{x:Type Thumb}">
                         <Border Background="Transparent" Padding="{TemplateBinding Padding}">
                             <!-- only change this lol -->
-                            <Rectangle Fill="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" HorizontalAlignment="Center" Width="1"/>
+                            <Rectangle Fill="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" HorizontalAlignment="Center" Width="1"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -28,9 +28,11 @@
         </Style>
 
     </UserControl.Resources>
-
-    <Grid>
-        <ListView x:Name="CombatantData" ItemsSource="{Binding}" FontSize="12" AlternationCount="2" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Auto" BorderThickness="0" ClipToBounds="True" Margin="-2,0,0,0">
+    <StackPanel>
+        <ListView x:Name="CombatantData" ItemsSource="{Binding}" FontSize="12"
+                  HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                  BorderThickness="0" ClipToBounds="True" Margin="-4,0,0,0">
             <ListView.Background>
                 <SolidColorBrush Opacity="0"/>
             </ListView.Background>
@@ -39,8 +41,8 @@
                     <GridView.ColumnHeaderContainerStyle>
                         <Style TargetType="{x:Type GridViewColumnHeader}">
                             <Setter Property="Background" Value="Transparent" />
-                            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" />
-                            <Setter Property="BorderBrush" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" />
+                            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" />
+                            <Setter Property="BorderBrush" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" />
                             <Setter Property="IsHitTestVisible" Value="False" />
                             <Setter Property="FontFamily" Value="Noto Sans CJK JP DemiLight,Yu Gothic UI" />
                             <Setter Property="FontSize" Value="11" />
@@ -72,10 +74,18 @@
                         </Style>
                     </GridView.ColumnHeaderContainerStyle>
 
+                    <GridViewColumn Header="★" Width="{Binding ElementName=CCImgH, Path=ActualWidth}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Path=ClassImage}" Margin="-3, 0, -9, 0" Width="16" Height="16" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
                     <GridViewColumn Header="Name" x:Name="NameColumn" Width="{Binding ElementName=CNameH, Path=ActualWidth}">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Path=DisplayName}" TextAlignment="Left" Margin="-3,-1,-5,-1" Padding="0" />
+                                <TextBlock Text="{Binding Path=DisplayName}" TextAlignment="Left" Margin="0" Padding="0" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -83,7 +93,7 @@
                     <GridViewColumn Header="%" x:Name="PercentColumn" Width="{Binding ElementName=CPercentH, Path=ActualWidth}">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Path=RatioPercent}" TextAlignment="Right" Margin="-5,-1,-5,-1" Padding="0" />
+                                <TextBlock Text="{Binding Path=RatioPercent}" TextAlignment="Center" Margin="-5,-1,-5,-1" Padding="0" />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -91,7 +101,15 @@
                     <GridViewColumn Header="偏差" x:Name="TScoreColumn" Width="{Binding ElementName=CTScoreH, Path=ActualWidth}">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Path=ReadTScore}" TextAlignment="Center" Margin="-5,-1,-5,-1" Padding="0"  />
+                                <TextBlock Text="{Binding Path=TScore}" TextAlignment="Center" Margin="-5,-1,-5,-1" Padding="0"  />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
+                    <GridViewColumn Header="Time" Width="{Binding ElementName=CTimeH, Path=ActualWidth}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=ActiveTimeStr}" TextAlignment="Center" Margin="-5,-1,-5,-1" Padding="0"  />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
@@ -102,7 +120,7 @@
                                 <TextBlock Text="{Binding Path=BindDamage}" TextAlignment="Right" Margin="-5,-1,-5,-1" Padding="0"  />
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
+                    </GridViewColumn> 
 
                     <GridViewColumn Header="Taken" x:Name="DamagedColumn" Width="{Binding ElementName=CDmgdH, Path=ActualWidth}">
                         <GridViewColumn.CellTemplate>
@@ -136,6 +154,14 @@
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
 
+                    <GridViewColumn Header="★" Width="{Binding ElementName=CWpImgH, Path=ActualWidth}">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding Path=WpImage}" Margin="-3, 0, -9, 0" Width="16" Height="16" />
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+
                     <GridViewColumn Header="Atk Name" x:Name="MaxHitColumn" Width="{Binding ElementName=CAtkH, Path=ActualWidth}">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -147,27 +173,33 @@
             </ListView.View>
         </ListView>
 
-        <Grid Visibility="Visible" Grid.Row="1" Grid.RowSpan="1">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="CNameHC" Width="1*"/>
-                <ColumnDefinition x:Name="CPercentHC" Width="40"/>
-                <ColumnDefinition x:Name="CTScoreHC" Width="40"/>
-                <ColumnDefinition x:Name="CDmgHC" Width="78"/>
-                <ColumnDefinition x:Name="CDmgDHC" Width="50" />
-                <ColumnDefinition x:Name="CDPSHC" Width="56"/>
-                <ColumnDefinition x:Name="CCriHC" Width="40"/>
-                <ColumnDefinition x:Name="CMdmgHC" Width="62"/>
-                <ColumnDefinition x:Name="CAtkHC" Width="1.7*"/>
+                <ColumnDefinition Width="17" />
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="43"/>
+                <ColumnDefinition Width="40"/>
+                <ColumnDefinition Width="40"/>
+                <ColumnDefinition Width="70"/>
+                <ColumnDefinition Width="47" />
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="40"/>
+                <ColumnDefinition Width="60"/>
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="1.7*"/>
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0" x:Name="CNameH" />
-            <Grid Grid.Column="1" x:Name="CPercentH" />
-            <Grid Grid.Column="2" x:Name="CTScoreH" />
-            <Grid Grid.Column="3" x:Name="CDmgH" />
-            <Grid Grid.Column="4" x:Name="CDmgdH" />
-            <Grid Grid.Column="5" x:Name="CDPSH" />
-            <Grid Grid.Column="6" x:Name="CCriH" />
-            <Grid Grid.Column="7" x:Name="CMdmgH" />
-            <Grid Grid.Column="8" x:Name="CAtkH" />
+            <Grid Grid.Column="0" x:Name="CCImgH" />
+            <Grid Grid.Column="1" x:Name="CNameH" />
+            <Grid Grid.Column="2" x:Name="CPercentH" />
+            <Grid Grid.Column="3" x:Name="CTScoreH" />
+            <Grid Grid.Column="4" x:Name="CTimeH" />
+            <Grid Grid.Column="5" x:Name="CDmgH" />
+            <Grid Grid.Column="6" x:Name="CDmgdH" />
+            <Grid Grid.Column="7" x:Name="CDPSH" />
+            <Grid Grid.Column="8" x:Name="CCriH" />
+            <Grid Grid.Column="9" x:Name="CMdmgH" />
+            <Grid Grid.Column="10" x:Name="CWpImgH" />
+            <Grid Grid.Column="11" x:Name="CAtkH" />
         </Grid>
-    </Grid>
+    </StackPanel>
 </UserControl>

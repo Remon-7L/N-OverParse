@@ -25,16 +25,13 @@
     Left="{Binding Source={x:Static properties:Settings.Default},Path=Left}"
     Top="{Binding Source={x:Static properties:Settings.Default},Path=Top}"
     >
-
-    <Window.BindingGroup>
-        <BindingGroup Name="ForegroundUpdate" NotifyOnValidationError="True"/>
-    </Window.BindingGroup>
-
+    
     <Window.Resources>
         <Style x:Key="ExitStyle" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" />
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" />
             <Setter Property="FontFamily" Value="Marlett" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="5,0" />
         </Style>
@@ -57,7 +54,7 @@
 
         <Style TargetType="ListView">
             <Setter Property="Background" Value="#FF0A0A0A"/>
-            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}"/>
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}"/>
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0"/>
             <Setter Property="FontFamily" Value="Noto Sans CJK JP DemiLight" />
@@ -71,15 +68,17 @@
 
         <Style x:Key="topmenu" TargetType="MenuItem" >
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}"/>
+            <Setter Property="Foreground" Value="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}"/>
+            <Setter Property="FontSize" Value="11" />
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="5,0,5,0"/>
+            <Setter Property="Padding" Value="5,0"/>
             <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
 
         <Style x:Key="submenu" TargetType="MenuItem">
             <Setter Property="FontFamily" Value="Yu Gothic UI" />
             <Setter Property="StaysOpenOnClick" Value="True" />
+            <Setter Property="FontSize" Value="12" />
         </Style>
 
     </Window.Resources>
@@ -108,7 +107,8 @@
                 </MenuItem>
                 <MenuItem Header="AtkLog" Click="AtkLog_Click" Style="{StaticResource topmenu}"/>
             </Menu>
-            <Label x:Name="Datetime" Visibility="Collapsed" Foreground="{Binding Source={x:Static properties:Settings.Default},Path=Foreground,BindingGroupName=ForegroundUpdate}" Padding="0" Margin="250,1,0,0" FontSize="12" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+            <Label x:Name="Datetime" Visibility="Collapsed" Foreground="{Binding Source={x:Static properties:Settings.Default},Path=Foreground}" Padding="0" Margin="250,1,0,0" FontSize="12" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+            
             <StackPanel HorizontalAlignment="Right" VerticalAlignment="Stretch" Orientation="Horizontal">
                 <Button Click="Minimize_Click" Content="0" Style="{StaticResource ExitStyle}" />
                 <Button Click="Exit_Click" Content="r" Style="{StaticResource ExitStyle}"/>

@@ -45,23 +45,6 @@ namespace OverParse
         }
         */
 
-        //SnapWindow
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        internal static extern bool GetWindowRect(IntPtr hwnd, ref RECT winrect);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        internal static extern bool GetClientRect(IntPtr hwnd, ref RECT lprect);
-
-        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-        internal static extern bool ClientToScreen(IntPtr hwnd, ref POINT ppt);
-
-
-        //SetDarkTheme
-        [DllImport("Uxtheme.dll", CharSet = CharSet.Unicode)]
-        internal static extern bool SetWindowTheme(IntPtr hwnd, string str, IntPtr nptr);
     }
-
-    public struct RECT { public int left, top, right, bottom; }
-    public struct POINT { public int x, y; }
 
 }

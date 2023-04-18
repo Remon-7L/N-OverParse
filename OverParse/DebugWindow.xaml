@@ -15,24 +15,12 @@
             <Setter Property="Margin" Value="0,0,0,5" />
         </Style>
     </Window.Resources>
-    <Grid>
-        
 
-        
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*" />
-            <ColumnDefinition Width="1*" />
-        </Grid.ColumnDefinitions>
-
-        <StackPanel Grid.Column="0" Margin="10">
-            <Button Content="ShowColorBox" Click="ShowColorBox" />
-        </StackPanel>
-        <StackPanel Grid.Column="1" Margin="10">
-            <Button Content="LoadCSVFile" Click="LoadCsvFile" />
-            <Button Content="ReloadSkills" Click="ReloadSkills" />
-            <Button x:Name="Run" Content="RunPSO2" Click="RunPSO2_Click" />
-            <Button Content="DarkTheme" Click="EnableDarkMode_Click" />
-        </StackPanel>
-
-    </Grid>
+    <StackPanel Grid.Column="0" Margin="10">
+        <Button Content="ShowColorBox" Click="ShowColorBox" />
+        <Button Content="LoadCSVFile" Click="LoadCsvFile" />
+        <Button Content="ReloadSkills" Click="ReloadSkills" />
+        <Button Content="Test" Click="Button_Click" />
+    </StackPanel>
+    
 </Window>

@@ -72,7 +72,7 @@
       <Value Profile="(Default)">1</Value>
     </Setting>
     <Setting Name="Height" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">270</Value>
+      <Value Profile="(Default)">200</Value>
     </Setting>
     <Setting Name="Width" Type="System.Double" Scope="User">
       <Value Profile="(Default)">600</Value>

@@ -110,5 +110,11 @@ namespace OverParse
             window.Show();
         }
 
+        private void ReloadSkills(object sender, RoutedEventArgs e)
+        {
+#if DEBUG
+#endif
+        }
+
     }
 }

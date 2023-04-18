@@ -301,7 +301,7 @@ namespace OverParse.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("270")]
+        [global::System.Configuration.DefaultSettingValueAttribute("200")]
         public double Height {
             get {
                 return ((double)(this["Height"]));
