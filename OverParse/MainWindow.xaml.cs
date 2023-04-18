@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -19,11 +18,10 @@ namespace OverParse
     {
         public static bool IsRunning, IsConnect;
         public static bool IsOnlyme, IsQuestTime, IsShowGraph, IsHighlight; // Properties.Settings.Default... Read is high cost, My BAD IDEA is this;
-        public static StreamReader logReader = null;  //Assert null
+        public static StreamReader logReader = null;
         public static int currentPlayerID = 10000000;
         public static string currentPlayerName = null;
-        public static string[] critignoreskill;
-        public static ConcurrentDictionary<uint, string> skillDict = new ConcurrentDictionary<uint, string>();
+        public static SortedList<uint, ValueTuple<string, WpType, WpType>> skillDict = new SortedList<uint, ValueTuple<string, WpType, WpType>>();
         public static DirectoryInfo damagelogs;
         public static FileInfo damagelogcsv;
         public static Session current = new Session();
@@ -31,7 +29,7 @@ namespace OverParse
         public static ObservableCollection<Hit> userattacks = new ObservableCollection<Hit>();
         public static DispatcherTimer damageTimer, logCheckTimer, inactiveTimer;
         public static Color MyColor, OddLeft, OddRgt, EveLeft, EveRgt, Other;
-        public static List<uint> IgnoreAtkID;
+        public static uint[] ignoreskill = new uint[] { 1281205888, 2505928570, 2692870042 };
 
         private List<string> LogFilenames = new List<string>();
         private IntPtr hwndcontainer;
@@ -90,15 +88,12 @@ namespace OverParse
             HotKeyLoad();
             DamageSortDesc();
 
-            damageTimer = new DispatcherTimer();
-            logCheckTimer = new DispatcherTimer();
-            inactiveTimer = new DispatcherTimer();
+            damageTimer = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 0, 0, 200) };
+            logCheckTimer = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 20) };
+            inactiveTimer = new DispatcherTimer() { Interval = new TimeSpan(0, 0, 1) };
             damageTimer.Tick += new EventHandler(UpdateForm);
-            damageTimer.Interval = new TimeSpan(0, 0, 0, 0, 200);
             logCheckTimer.Tick += new EventHandler(CheckNewCsv);
-            logCheckTimer.Interval = new TimeSpan(0, 0, 20);
             inactiveTimer.Tick += new EventHandler(HideIfInactive);
-            inactiveTimer.Interval = new TimeSpan(0, 0, 1);
             damageTimer.Start();
             logCheckTimer.Start();
             inactiveTimer.Start();

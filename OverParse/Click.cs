@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -16,7 +16,7 @@ namespace OverParse
             Properties.Settings.Default.AutoEndEncounters = false;
             Properties.Settings.Default.AutoEndEncounters = temp;
             backup = current;
-            backup.players = new ObservableCollection<Player>(current.players);
+            backup.players = new List<Player>(current.players);
 
             string filename = WriteLog();
             if (filename != null)
@@ -38,7 +38,7 @@ namespace OverParse
         private void EndEncounterNoLog_Click(object sender, RoutedEventArgs e)
         {
             current = backup;
-            current.players = new ObservableCollection<Player>(backup.players);
+            current.players = new List<Player>(backup.players);
             IsRunning = false;
             UpdateForm(this, null);
         }
@@ -108,6 +108,12 @@ namespace OverParse
         {
             AtkLogWindow window = new AtkLogWindow() { Owner = this };
             window.Show();
+        }
+
+        private void ReloadSkills(object sender, RoutedEventArgs e)
+        {
+#if DEBUG
+#endif
         }
 
     }

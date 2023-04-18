@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 
@@ -17,11 +15,10 @@ namespace OverParse
 
         /// <summary>ログ更新</summary>
         /// <returns>IsLogUpdated</returns>
-        public async Task<bool> UpdateLog()
+        public bool UpdateLog()
         {
-            if (logReader == null) { return false; }
-            string newLines = await logReader.ReadToEndAsync();
-            if (string.IsNullOrEmpty(newLines)) { return false; }
+            if (logReader == null || logReader.EndOfStream) { return false; }
+            string newLines = logReader.ReadToEnd();
 
             string[] dataLine = newLines.Split('\n');
             foreach (string line in dataLine)
@@ -48,41 +45,44 @@ namespace OverParse
                     if (!IsRunning)
                     {
                         current = new Session();
-                        AllTab.CombatantData.ItemsSource = current.players;
-                        var collectionView = CollectionViewSource.GetDefaultView(AllTab.CombatantData.ItemsSource);
-                        collectionView.SortDescriptions.Add(new SortDescription("SortDamage", ListSortDirection.Descending));
                     }
 
-                    if (current.startTimestamp == 0)
-                    { //initialize
-                        current.startTimestamp = lineTimestamp;
-                        current.nowTimestamp = lineTimestamp; 
-                    }
-
-                    if (0 < (lineTimestamp - current.nowTimestamp))
+                    if (0 < (lineTimestamp - current.lastTimestamp))
                     {
-                        current.diffTime++;
-                        current.nowTimestamp = lineTimestamp;
+                        current.AllActiveTime++;
+                        current.lastTimestamp = lineTimestamp;
                     }
 
-                    if (IsQuestTime) { current.ActiveTime = current.diffTime; }
-                    else { current.ActiveTime = lineTimestamp - current.startTimestamp; }
+                    Player p = current.players.FirstOrDefault(x => x.ID == sourceID);
 
-                    Player p;
-                    if (current.players.Any(i => i.ID == sourceID))
-                    {
-                        p = current.players.First(x => x.ID == sourceID);
-                    }
-                    else
+                    if (p == null)
                     {
                         current.players.Add(new Player(sourceID, sourceName));
                         p = current.players[current.players.Count - 1];
                     }
 
+                    if(0 < (lineTimestamp - p.LastSeenTime))
+                    {
+                        p.ActiveTime++;
+                        p.LastSeenTime = lineTimestamp;
+                    }
+
                     current.totalDamage += hitDamage; p.Damage += hitDamage; p.AttackCount++;
                     if (Cri) { p.CriCount++; }
                     if (p.Maxdmg < hitDamage) { p.Maxdmg = hitDamage; p.MaxHitID = attackID; }
-                    p.Attacks.Add(new Hit(attackID, hitDamage, Cri, current.diffTime));
+
+                    Attack atk = p.Attacks.FirstOrDefault(x => x.ID.Contains(attackID));
+                    if (atk == null)
+                    {
+                        p.Attacks.Add(new Attack(attackID, hitDamage, Cri));
+                    }
+                    else
+                    {
+                        atk.Damage += hitDamage; atk.AtkCount++;
+                        if (Cri) { atk.Cri++; }
+                        if (hitDamage < atk.MinDamage) { atk.MinDamage = hitDamage; }
+                        if (atk.MaxDamage < hitDamage) { atk.MaxDamage = hitDamage; }
+                    }
 
                     IsRunning = true;
                 }
@@ -91,20 +91,17 @@ namespace OverParse
                     if (!IsRunning) { continue; } //被ダメージからセッションが始まらないようにする
 
                     Player p = current.players.FirstOrDefault(x => x.ID == targetID);
-                    if(p != null) { p.Damaged += hitDamage; }
-                    
-                    /* 
-                     * Plugin_20230407では被ダメにプレイヤー名情報が入らない為
-                     * Sessionに既に登録されてない場合は無視
-                     */
+                    if(p != null && !ignoreskill.Contains(attackID)) { p.Damaged += hitDamage; }
+
                 }
             }
+            current.players.Sort((x, y) => y.Damage.CompareTo(x.Damage));
 
             return true;
         }
 
 
-        public async void UpdateForm(object sender, EventArgs e)
+        public void UpdateForm(object sender, EventArgs e)
         {
             if (current.players == null)
             {
@@ -117,7 +114,7 @@ namespace OverParse
                 Datetime.Content = DateTime.Now.ToString("HH:mm:ss.ff");
             }
 
-            bool IsLogContain = await UpdateLog();
+            bool IsLogContain = UpdateLog();
             if (IsLogContain == false && noUpdateCount < 5)
             {
                 noUpdateCount++;
@@ -141,13 +138,9 @@ namespace OverParse
             if (IsRunning)
             {
                 EncounterIndicator.Fill = new SolidColorBrush(Color.FromArgb(255, 0, 192, 255));
-                TimeSpan timespan = TimeSpan.FromSeconds(current.ActiveTime);
-                string timer = timespan.ToString(@"h\:mm\:ss");
-                EncounterStatus.Content = $"{timer}";
-
-                double totalDPS = current.totalDamage / (double)current.ActiveTime;
-                if (totalDPS > 0) { EncounterStatus.Content += $" - Total : {current.totalDamage:N0}" + $" - {totalDPS:N0} DPS"; }
-                lastStatus = EncounterStatus.Content.ToString();
+                EncounterStatus.Content = $"{TimeSpan.FromSeconds(current.AllActiveTime):h\\:mm\\:ss}";
+                if (0 < current.AllActiveTime) { EncounterStatus.Content += $" - Total : {current.totalDamage:N0}" + $" - {current.totalDamage / current.AllActiveTime:N0} DPS"; }
+                lastStatus = (string)EncounterStatus.Content;
             }
             else if (!damagelogs.Exists || !damagelogs.GetFiles().Any())
             {
@@ -167,10 +160,10 @@ namespace OverParse
         public string WriteLog()
         {
             if (current.players.Count == 0) { return null; }
-            if (current.ActiveTime == 0) { current.ActiveTime = 1; }
-            string timer = TimeSpan.FromSeconds(current.ActiveTime).ToString(@"hh\:mm\:ss");
+            if (current.AllActiveTime == 0) { current.AllActiveTime = 1; }
+            string timer = TimeSpan.FromSeconds(current.AllActiveTime).ToString(@"hh\:mm\:ss");
             StringBuilder log = new StringBuilder(8192);
-            _ = log.Append($"{DateTime.Now:F} | {timer} | TotalDamage : {current.totalDamage:N0} | TotalDPS : {current.totalDamage / current.ActiveTime:N0}").AppendLine().AppendLine();
+            _ = log.Append($"{DateTime.Now:F} | {timer} | TotalDamage : {current.totalDamage:N0} | TotalDPS : {current.totalDamage / current.AllActiveTime:N0}").AppendLine().AppendLine();
 
             foreach (Player c in current.players)
             {
@@ -181,56 +174,17 @@ namespace OverParse
 
             foreach (Player c in current.players)
             {
-                List<string> attackNames = new List<string>();
-                List<Tuple<string, List<int>, List<bool>>> attackData = new List<Tuple<string, List<int>, List<bool>>>();
-
                 _ = log.AppendLine($"[ {c.PlayerName} - {c.RatioPercent}% - {c.Damage:N0} dmg ]").AppendLine().AppendLine();
 
-                List<PAHit> temphits = new List<PAHit>();
-                foreach (Hit atk in c.Attacks)
+                foreach(Attack atk in c.Attacks)
                 {
-                    //PAID -> PAName
-                    string temp = atk.ID.ToString();
-                    if (skillDict.ContainsKey(atk.ID)) { temp = skillDict[atk.ID]; } // these are getting disposed anyway, no 1 cur
-                    if (!attackNames.Contains(temp)) { attackNames.Add(temp); }
-                    temphits.Add(new PAHit(temp, atk.Damage, atk.Cri));
-                }
-
-                foreach (string paname in attackNames)
-                {
-                    //マッチングアタックからダメージを選択するだけ
-                    List<int> matchingAttacks = temphits.Where(a => a.Name == paname).Select(a => a.Damage).ToList();
-                    List<bool> criPercents = temphits.Where(a => a.Name == paname).Select(a => a.Cri).ToList();
-                    attackData.Add(new Tuple<string, List<int>, List<bool>>(paname, matchingAttacks, criPercents));
-                }
-
-                attackData = attackData.OrderByDescending(x => x.Item2.Sum()).ToList();
-
-                foreach (var i in attackData)
-                {
-                    List<int> excri = i.Item3.ConvertAll(x => Convert.ToInt32(x));
-
-                    string min, max, avg, cri;
-                    double percent = i.Item2.Sum() * 100d / c.Damage;
-                    string spacer = (percent >= 9) ? "" : " ";
-
-                    string paddedPercent = percent.ToString("00.00").Substring(0, 5);
-                    string hits = i.Item2.Count().ToString("N0");
-                    string sum = i.Item2.Sum().ToString("N0");
-
-                    min = i.Item2.Min().ToString("N0");
-                    max = i.Item2.Max().ToString("N0");
-                    avg = i.Item2.Average().ToString("N0");
-                    cri = excri.Any() ? (excri.Average() * 100).ToString("N2") : "NaN";
-
-                    _ = log.Append($"{paddedPercent}%	| {i.Item1} - {sum} dmg - Critical : {cri}%").AppendLine();
-                    _ = log.Append($"	|   {hits} hits - {min} min, {avg} avg, {max} max").AppendLine();
+                    _ = log.Append($"{(atk.Damage / c.Damage).ToString("00.00").Substring(0, 5)}%	| {atk.PAName} - {atk.Damage} dmg - Critical : {atk.Cri / atk.AtkCount}%").AppendLine();
+                    _ = log.Append($"	|   {atk.AtkCount} hits - {atk.MinDamage} min, {atk.Damage/atk.AtkCount} avg, {atk.MaxDamage} max").AppendLine();
                 }
 
                 _ = log.AppendLine();
             }
 
-            DateTime thisDate = DateTime.Now;
             string directory = string.Format("{0:yyyy-MM-dd}", DateTime.Now);
             Directory.CreateDirectory($"Logs/{directory}");
             string datetime = string.Format("{0:yyyy-MM-dd_HH-mm-ss}", DateTime.Now);
@@ -242,11 +196,4 @@ namespace OverParse
 
     }
 
-    public struct PAHit //Use WriteLog Only
-    {
-        public string Name;
-        public int Damage;
-        public bool Cri;
-        public PAHit(string paname, int dmg, bool cri) { Name = paname; Damage = dmg; Cri = cri; }
-    }
 }

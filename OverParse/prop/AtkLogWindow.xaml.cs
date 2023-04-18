@@ -33,5 +33,19 @@ namespace OverParse
             if (e.LeftButton == MouseButtonState.Pressed) { DragMove(); }
         }
 
+        private void IDCopy_Click(object sender, RoutedEventArgs e)
+        {
+            if (AtkLogList.SelectedItem != null)
+            {
+                Hit hit = (Hit)AtkLogList.SelectedItem;
+                try
+                {
+                    Clipboard.SetText(hit.ID.ToString());
+                }
+                catch { MessageBox.Show("Error"); } 
+            }
+
+        }
+
     }
 }

@@ -45,7 +45,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Xaml">
@@ -141,6 +140,37 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="prop\icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="prop\icon_material\Assault_Rifle.png" />
+    <Resource Include="prop\icon_material\Bo.png" />
+    <Resource Include="prop\icon_material\Bow.png" />
+    <Resource Include="prop\icon_material\Br.png" />
+    <Resource Include="prop\icon_material\Double_Saber.png" />
+    <Resource Include="prop\icon_material\Dual_Blade.png" />
+    <Resource Include="prop\icon_material\Fi.png" />
+    <Resource Include="prop\icon_material\Fo.png" />
+    <Resource Include="prop\icon_material\Gu.png" />
+    <Resource Include="prop\icon_material\Gunslash.png" />
+    <Resource Include="prop\icon_material\Hu.png" />
+    <Resource Include="prop\icon_material\Jet_Boots.png" />
+    <Resource Include="prop\icon_material\Katana.png" />
+    <Resource Include="prop\icon_material\Knuckle.png" />
+    <Resource Include="prop\icon_material\Launcher.png" />
+    <Resource Include="prop\icon_material\Ra.png" />
+    <Resource Include="prop\icon_material\Rod.png" />
+    <Resource Include="prop\icon_material\Sl.png" />
+    <Resource Include="prop\icon_material\Sword.png" />
+    <Resource Include="prop\icon_material\Takt.png" />
+    <Resource Include="prop\icon_material\Talis.png" />
+    <Resource Include="prop\icon_material\Te.png" />
+    <Resource Include="prop\icon_material\TMG.png" />
+    <Resource Include="prop\icon_material\Twin_Dagger.png" />
+    <Resource Include="prop\icon_material\Wa.png" />
+    <Resource Include="prop\icon_material\Wand.png" />
+    <Resource Include="prop\icon_material\Wired_Lance.png" />
+    <Resource Include="prop\icon_material\Partizan.png" />
+    <Resource Include="prop\icon_material\NA.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

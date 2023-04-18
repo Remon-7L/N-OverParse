@@ -17,19 +17,15 @@ namespace OverParse
         private void SkillsLoad()
         {
             //skills.csv
-            try
+            foreach (string pa in File.ReadAllLines(@"prop/skills.csv"))
             {
-                string[] skills = File.ReadAllLines(@"prop/skills.csv");
-
-                foreach (string pa in skills)
+                string[] split = pa.Split(',');
+                if (split.Length > 1)
                 {
-                    string[] split = pa.Split(',');
-                    if (split.Length > 1) { _ = skillDict.GetOrAdd(uint.Parse(split[1]), split[0]); }
+                    Enum.TryParse(split[0], out WpType classType);
+                    Enum.TryParse(split[1], out WpType wpType);
+                    skillDict.Add(uint.Parse(split[3]), (split[2], classType, wpType));
                 }
-            }
-            catch
-            {
-                MessageBox.Show("skills.csvが存在しません。\n全ての最大ダメージはUnknownとなります。", "OverParse Setup", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 

@@ -51,7 +51,19 @@
             </StackPanel>
 
             <DataGrid x:Name="AtkLogList" Grid.Row="1" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.CanContentScroll="True" AutoGenerateColumns="False">
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="IDCopy" Click="IDCopy_Click" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
                 <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="★">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding WpImage}" Height="16" Width="16" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="PAName" Binding="{Binding IDName}" IsReadOnly="True" />
                     <DataGridTextColumn Header="PAID" Binding="{Binding ReadID}" IsReadOnly="True" />
                     <DataGridTextColumn Header="Damage" Binding="{Binding ReadDamage}" IsReadOnly="True" />

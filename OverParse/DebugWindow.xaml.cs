@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -48,6 +47,7 @@ namespace OverParse
             {
                 if (line == "") { continue; }
                 if (line == "timestamp, instanceID, sourceID, sourceName, targetID, targetName, attackID, damage, IsJA, IsCrit, IsMultiHit, IsMisc, IsMisc2") { continue; }
+                if (line == "end_encounter") { continue; }
                 string[] parts = line.Split(',');
                 if (int.Parse(parts[7]) < 0) { continue; }
                 if (parts[2] == "0" || uint.Parse(parts[6]) == 0) { continue; }
@@ -59,7 +59,7 @@ namespace OverParse
                 string targetName = parts[5];
                 uint attackID = uint.Parse(parts[6]);
                 int hitDamage = int.Parse(parts[7]);
-                bool Cri = (parts[9] == "1");
+                bool Cri = parts[9] == "1";
                 if (sourceName.Contains("comma")) { sourceName = sourceName.Replace("comma", ","); }
                 if (targetName.Contains("comma")) { targetName = targetName.Replace("comma", ","); }
 
@@ -68,36 +68,42 @@ namespace OverParse
                 {
                     if (!MainWindow.IsRunning) { MainWindow.current = new Session(); }
 
-                    if (MainWindow.current.startTimestamp == 0)
-                    { //initialize
-                        MainWindow.current.startTimestamp = lineTimestamp;
-                        MainWindow.current.nowTimestamp = lineTimestamp;
-                    }
-
-                    if (0 < (lineTimestamp - MainWindow.current.nowTimestamp))
+                    if (0 < (lineTimestamp - MainWindow.current.lastTimestamp))
                     {
-                        MainWindow.current.diffTime++;
-                        MainWindow.current.nowTimestamp = lineTimestamp;
+                        MainWindow.current.AllActiveTime++;
+                        MainWindow.current.lastTimestamp = lineTimestamp;
                     }
 
-                    if (MainWindow.IsQuestTime) { MainWindow.current.ActiveTime = MainWindow.current.diffTime; }
-                    else { MainWindow.current.ActiveTime = lineTimestamp - MainWindow.current.startTimestamp; }
+                    Player p = MainWindow.current.players.FirstOrDefault(x => x.ID == sourceID);
 
-                    Player p;
-                    if (MainWindow.current.players.Any(i => i.ID == sourceID))
-                    {
-                        p = MainWindow.current.players.First(x => x.ID == sourceID);
-                    }
-                    else
+                    if (p == null)
                     {
                         MainWindow.current.players.Add(new Player(sourceID, sourceName));
                         p = MainWindow.current.players[MainWindow.current.players.Count - 1];
                     }
 
+                    if (0 < (lineTimestamp - p.LastSeenTime))
+                    {
+                        p.ActiveTime++;
+                        p.LastSeenTime = lineTimestamp;
+                    }
+
                     MainWindow.current.totalDamage += hitDamage; p.Damage += hitDamage; p.AttackCount++;
                     if (Cri) { p.CriCount++; }
                     if (p.Maxdmg < hitDamage) { p.Maxdmg = hitDamage; p.MaxHitID = attackID; }
-                    p.Attacks.Add(new Hit(attackID, hitDamage, Cri, MainWindow.current.diffTime));
+
+                    Attack atk = p.Attacks.FirstOrDefault(x => x.ID.Contains(attackID));
+                    if (atk == null)
+                    {
+                        p.Attacks.Add(new Attack(attackID, hitDamage, Cri));
+                    }
+                    else
+                    {
+                        atk.Damage += hitDamage; atk.AtkCount++;
+                        if (Cri) { atk.Cri++; }
+                        if (hitDamage < atk.MinDamage) { atk.MinDamage = hitDamage; }
+                        if (atk.MaxDamage < hitDamage) { atk.MaxDamage = hitDamage; }
+                    }
 
                     MainWindow.IsRunning = true;
                 }
@@ -106,9 +112,13 @@ namespace OverParse
                     if (!MainWindow.IsRunning) { continue; } //被ダメージからセッションが始まらないようにする
 
                     Player p = MainWindow.current.players.FirstOrDefault(x => x.ID == targetID);
-                    if (p != null) { p.Damaged += hitDamage; }
+                    if (p != null && !MainWindow.ignoreskill.Contains(attackID)) { p.Damaged += hitDamage; }
                 }
+
+
             }
+
+            MainWindow.current.players.Sort((x, y) => y.Damage.CompareTo(x.Damage));
 
             m.AllTab.CombatantData.ItemsSource = MainWindow.current.players;
             var collectionView = CollectionViewSource.GetDefaultView(m.AllTab.CombatantData.ItemsSource);
@@ -139,53 +149,18 @@ namespace OverParse
 #if DEBUG
             MainWindow.skillDict.Clear();
 
-            string[] skills = File.ReadAllLines(@"prop/skills.csv");
-            foreach (string pa in skills)
+            //skills.csv
+            foreach (string pa in File.ReadAllLines(@"prop/skills.csv"))
             {
                 string[] split = pa.Split(',');
-                if (split.Length > 1) { _ = MainWindow.skillDict.GetOrAdd(uint.Parse(split[1]), split[0]); }
+                if (split.Length > 1)
+                {
+                    Enum.TryParse(split[0], out WpType classType);
+                    Enum.TryParse(split[1], out WpType wpType);
+                    MainWindow.skillDict.Add(uint.Parse(split[3]), (split[2], classType, wpType));
+                }
             }
 #endif
-        }
-
-        private void RunPSO2_Click(object sender, RoutedEventArgs e)
-        {
-#if DEBUG
-            if (!IsAdministrator()) { _ = MessageBox.Show("管理者権限がありません。"); return; }
-
-            //not work
-            Environment.SetEnvironmentVariable("-pso2", "+0x01e3f1e9");
-
-            ProcessStartInfo inf = new ProcessStartInfo
-            {
-                Arguments = "+0x33aca2b9",
-                FileName = @"C:\Program Files (x86)\SEGA\PHANTASYSTARONLINE2\pso2_bin\pso2.exe",
-                UseShellExecute = true,
-                WorkingDirectory = @"C:\Program Files (x86)\SEGA\PHANTASYSTARONLINE2\pso2_bin\"
-            };
-
-            Process p = new Process
-            {
-                StartInfo = inf
-            };
-
-            _ = p.Start();
-#endif
-        }
-
-        private void EnableDarkMode_Click(object sender, RoutedEventArgs e)
-        {
-#if DEBUG
-            var box = new System.Windows.Interop.WindowInteropHelper(this);
-            NativeMethods.SetWindowTheme(box.Handle, "DarkMode_Explorer", IntPtr.Zero);
-#endif
-        }
-
-        private bool IsAdministrator()
-        {
-            var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
-            var principal = new System.Security.Principal.WindowsPrincipal(identity);
-            return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
         }
 
     }
